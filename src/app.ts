@@ -16,13 +16,25 @@ const checkStatusChanged = (infoSaved: PackageInfo | undefined, info: PackageInf
         || firstStatusSaved.desc != firstStatus.desc;
 }
 
-export const app = async (code: string) => {
-
-    const infoSaved = getPackageInfo(code);
-    const info = await getPackageCorreios(code);    
-
-    if(checkStatusChanged(infoSaved, info))
-        statusChanged(info.status[0], code);
-
-    savePackageInfo(info);
+export const checkPackages = async (codes: string[]) => {
+    for(const code of codes) {
+        const infoSaved = getPackageInfo(code);
+        const info = await getPackageCorreios(code);    
+    
+        if(checkStatusChanged(infoSaved, info))
+            statusChanged(info.status[0], code);
+    
+        savePackageInfo(info);
+    }
 };
+
+const INTERVAL_MS = 1000 * 60 * 5;
+
+export const app =  async(codes: string[]) => {
+    checkPackages(codes);
+    setInterval(() =>  { 
+        checkPackages(codes)
+        
+    }, INTERVAL_MS);
+}
+
