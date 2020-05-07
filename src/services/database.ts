@@ -1,4 +1,5 @@
 import { Pool, PoolClient } from 'pg';
+import { PackageInfo, PackageInfoStatus } from '../models';
 const {
     DB_HOST,
     DB_DATABASE,
@@ -35,6 +36,53 @@ export const createTables = async (cn: PoolClient) => {
         await cn.query(script);
     }
 }
+
+
+export const getPackageInfo = async (code: string, cn: PoolClient) : Promise<PackageInfo | undefined> => {
+    const packageResult = await cn.query(`SELECT * FROM Packages WHERE code = $1`, [code]);
+    if(!packageResult.rows.length)
+        return undefined;
+
+    const id = packageResult.rows[0].id as number;
+    const packageDescription = packageResult.rows[0].description as string || '';
+
+    const packageStatusResult = await cn.query(`SELECT * FROM PackageStatus WHERE PackageID = $1`, [id]);
+
+    const status = packageStatusResult.rows.map(statusResult => {
+        const { date, description, id } = statusResult;
+
+        let s : PackageInfoStatus = {
+            date,
+            description,
+            id
+        }
+        return s;
+    })
+
+    return {
+        code,
+        id,
+        status,
+        description: packageDescription
+    }
+}
+
+export const savePackageInfo = async (info: PackageInfo, cn: PoolClient) => {
+    if(!info.id) {
+        await cn.query(`INSERT INTO Packages (code, description) VALUES($1, $2)`, [info.code, info.description]);
+
+        const packageResult = await cn.query(`SELECT id FROM packages WHERE code = $1`, [info.code]);
+        info.id = packageResult.rows[0].id;
+    }
+
+    await cn.query('DELETE FROM PackageStatus WHERE id = $1', [info.id]);
+    
+    for(const status of info.status) {
+        await cn.query('INSERT INTO PackageStatus(PackageID, description, date) VALUES($1, $2, $3) ', [info.id, status.description, status.date]);
+    }
+}
+
+
 
 
 

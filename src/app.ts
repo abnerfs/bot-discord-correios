@@ -1,10 +1,10 @@
 import { PackageInfoStatus, PackageInfo } from "./models";
-import { getPackageInfo, savePackageInfo } from "./services/storage";
 import { getPackageCorreios } from "./services/CorreioService";
+import { getPackageInfo, getConnection, savePackageInfo } from "./services/database";
 
 
 const statusChanged = async (lastStatus: PackageInfoStatus, code: string) => {
-    console.log(`Novo status ${code}: ${lastStatus.desc} `);
+    console.log(`Novo status ${code}: ${lastStatus.description} `);
 }
 
 const checkStatusChanged = (infoSaved: PackageInfo | undefined, info: PackageInfo) : Boolean => {
@@ -12,19 +12,27 @@ const checkStatusChanged = (infoSaved: PackageInfo | undefined, info: PackageInf
     const firstStatus = info.status[0];
 
     return !firstStatusSaved 
-        || !firstStatusSaved.desc 
-        || firstStatusSaved.desc != firstStatus.desc;
+        || !firstStatusSaved.description 
+        || firstStatusSaved.description != firstStatus.description;
 }
 
 export const checkPackages = async (codes: string[]) => {
     for(const code of codes) {
-        const infoSaved = getPackageInfo(code);
-        const info = await getPackageCorreios(code);    
-    
-        if(checkStatusChanged(infoSaved, info))
-            statusChanged(info.status[0], code);
-    
-        savePackageInfo(info);
+
+        const cn = await getConnection();
+        try{
+            const infoSaved = await getPackageInfo(code, cn);
+            const info = await getPackageCorreios(code);    
+        
+            if(checkStatusChanged(infoSaved, info)) {
+                statusChanged(info.status[0], code);
+                await savePackageInfo(info, cn);
+            }
+        
+        }
+        finally {
+            cn.release();
+        }
     }
 };
 

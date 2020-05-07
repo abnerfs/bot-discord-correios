@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import { JSDOM } from 'jsdom';
 import { PackageInfo, PackageInfoStatus } from '../models';
+import { parseDateStr } from './util';
 
 
 const getPackageInfoBody = async (codigo: string) => {
@@ -29,19 +30,21 @@ const getPackageInfo = (body: string, code: string) : PackageInfo => {
 
     const status = Array.prototype.slice.call(dom.window.document.querySelectorAll('.listEvent'))
         .map(row => {
-            const dt = row.querySelector('.sroDtEvent').textContent
+            const dt = row.querySelector('.sroDtEvent').textContent as string;
+            const dtParsed = parseDateStr(dt);
             const desc = row.querySelector('.sroLbEvent').textContent
 
             const status : PackageInfoStatus = {
-                desc,
-                dt
+                description: desc,
+                date: dtParsed
             };
             return status;
         });
 
     return {
         code,
-        status
+        status,
+        description: ''
     };
 }
 
