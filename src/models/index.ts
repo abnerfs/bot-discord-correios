@@ -1,10 +1,13 @@
 
 export type PackageInfoStatus = {
-    dt: string;
-    desc: string;
+    id?: number;
+    date: Date;
+    description: string;
 }
 
 export type PackageInfo = {
+    id?: number;
     code: string;
+    description: string;
     status: PackageInfoStatus[]
 }
