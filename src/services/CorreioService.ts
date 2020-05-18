@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer';
 import { JSDOM } from 'jsdom';
 import { PackageInfo, PackageInfoStatus } from '../models';
-import { parseDateStr } from './util';
+import { parseDateStr, replaceALL } from './util';
 
 
 const getPackageInfoBody = async (codigo: string) => {
@@ -32,7 +32,8 @@ const getPackageInfo = (body: string, code: string) : PackageInfo => {
         .map(row => {
             const dt = row.querySelector('.sroDtEvent').textContent as string;
             const dtParsed = parseDateStr(dt);
-            const desc = row.querySelector('.sroLbEvent').textContent
+            const desc = 
+                replaceALL(replaceALL(row.querySelector('.sroLbEvent').textContent, '\r', ''), '\n', '').trim();
 
             const status : PackageInfoStatus = {
                 description: desc,
@@ -41,10 +42,18 @@ const getPackageInfo = (body: string, code: string) : PackageInfo => {
             return status;
         });
 
+    const lastStatus = status[0];
+
+    const delivered = lastStatus.description.toUpperCase().indexOf('OBJETO ENTREGUE AO DESTINAT') > -1;
+    console.log('Delivered: ' + delivered);
+
     return {
         code,
         status,
-        description: ''
+        description: '',
+        delivered,
+        channelID: '',
+        userID: ''
     };
 }
 

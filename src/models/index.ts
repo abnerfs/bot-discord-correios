@@ -9,5 +9,8 @@ export type PackageInfo = {
     id?: number;
     code: string;
     description: string;
+    delivered: boolean;
+    channelID: string;
+    userID: string;
     status: PackageInfoStatus[]
 }
